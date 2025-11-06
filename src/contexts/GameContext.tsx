@@ -336,7 +336,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
       // Apply food efficiency and global coin multiplier
       const foodEfficiency = prev.foodType === 'pellets' ? 1.5 : prev.foodType === 'lettuce' ? 1.2 : 1;
-      coinsEarned = Math.floor(coinsEarned * foodEfficiency * prev.coinMultiplier);
+      const nextDayNumber = prev.day + 1;
+      const timeBonus = Math.min(0.25, Math.floor(nextDayNumber / 100) * 0.05);
+      coinsEarned = Math.floor(coinsEarned * foodEfficiency * prev.coinMultiplier * (1 + timeBonus));
 
       // Breeding logic
       if (canBreed && Math.random() < BREEDING_CHANCE) {
