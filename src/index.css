@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 42 45% 96%;
+    --foreground: 25 35% 25%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 25 35% 25%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 25 35% 25%;
+
+    --primary: 142 45% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 25 55% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 42 30% 90%;
+    --muted-foreground: 25 20% 45%;
+
+    --accent: 28 80% 65%;
+    --accent-foreground: 25 35% 20%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 42 25% 85%;
+    --input: 42 25% 85%;
+    --ring: 142 45% 45%;
+
+    --radius: 1rem;
+
+    --success: 142 55% 50%;
+    --success-foreground: 0 0% 100%;
+
+    --water: 200 75% 65%;
+    --water-foreground: 0 0% 100%;
+
+    --food: 28 80% 55%;
+    --food-foreground: 25 35% 20%;
+
+    --housing: 25 65% 45%;
+    --housing-foreground: 0 0% 100%;
+
+    --gradient-farm: linear-gradient(135deg, hsl(142 45% 45%), hsl(142 55% 60%));
+    --gradient-earth: linear-gradient(135deg, hsl(25 55% 55%), hsl(25 65% 65%));
+    --gradient-sky: linear-gradient(180deg, hsl(200 40% 85%), hsl(42 45% 96%));
+    
+    --shadow-soft: 0 4px 16px -4px hsl(25 35% 25% / 0.1);
+    --shadow-card: 0 2px 8px -2px hsl(25 35% 25% / 0.08);
+    
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .animate-bounce-gentle {
+    animation: bounce-gentle 3s ease-in-out infinite;
+  }
+  
+  .animate-pulse-gentle {
+    animation: pulse-gentle 2s ease-in-out infinite;
+  }
+  
+  @keyframes bounce-gentle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  
+  @keyframes pulse-gentle {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+}
