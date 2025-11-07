@@ -64,6 +64,14 @@ export const ACHIEVEMENTS: Achievement[] = [
     category: 'rabbits',
     requirement: (stats) => stats.totalRabbitsBorn >= 100,
   },
+   {
+    id: 'breeder-1000',
+    name: 'Rabbit Population',
+    description: 'Give birth to 1000 rabbits in total',
+    icon: '🐇',
+    category: 'rabbits',
+    requirement: (stats) => stats.totalRabbitsBorn >= 1000,
+  },
 
   // Coin Achievements
   {
@@ -97,6 +105,14 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🏆',
     category: 'coins',
     requirement: (stats) => stats.totalCoinsEarned >= 5000,
+  },
+  {
+    id: 'coins-10000',
+    name: 'The Richest Bunny',
+    description: 'Accumulate 10000 coins',
+    icon: '💸',
+    category: 'coins',
+    requirement: (stats) => stats.totalCoinsEarned >= 10000,
   },
 
   // Day Achievements
@@ -149,6 +165,14 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🏘️',
     category: 'resources',
     requirement: (stats) => stats.houses >= 5,
+  },
+  {
+    id: 'house-25',
+    name: 'Village Owner',
+    description: 'Own 25 rabbit houses',
+    icon: '🏚',
+    category: 'resources',
+    requirement: (stats) => stats.houses >= 25,
   },
   {
     id: 'lettuce-garden',

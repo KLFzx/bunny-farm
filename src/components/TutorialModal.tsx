@@ -23,7 +23,6 @@ export const TutorialModal = ({ onClose }: Props) => {
             <li>Buy <b>houses</b> to raise capacity. Breeding can add more rabbits. 🏠</li>
             <li>Buy <b>upgrades</b> to boost coins, breeding, and efficiency. Events can help or hinder. 🏗️</li>
             <li>Receive various boosts or penalties from <b> random events</b>. 📈</li>
-            
           </ul>
           <p>If your empire starts starving you can always restart and try a new strategy.</p>
         </div>

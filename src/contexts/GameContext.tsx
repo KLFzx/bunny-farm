@@ -348,7 +348,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       // Apply food efficiency and global coin multiplier
       const foodEfficiency = prev.foodType === 'pellets' ? 1.5 : prev.foodType === 'lettuce' ? 1.2 : 1;
       const nextDayNumber = prev.day + 1;
-      const timeBonus = Math.min(0.35, Math.floor(nextDayNumber / 130) * 0.1);
+      const timeBonus = Math.min(0.95, Math.floor(nextDayNumber / 80) * 0.05);
       coinsEarned = Math.floor(coinsEarned * foodEfficiency * prev.coinMultiplier * (1 + timeBonus));
 
       // Breeding logic
@@ -424,7 +424,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (event.id === 'fox-attack' || event.id === 'wolf-raid' || event.id === 'bear-rampage') {
-          const pct = event.id === 'fox-attack' ? 0.10 : event.id === 'wolf-raid' ? 0.20 : 0.35;
+          const pct = event.id === 'fox-attack' ?  (0.01 + Math.random() * 0.09) : event.id === 'wolf-raid' ? (0.05 + Math.random() * 0.15) :  (0.1 + Math.random() * 0.25);
           const toRemoveCount = Math.max(1, Math.floor(newRabbits.length * pct));
           const ids = new Set<string>();
           while (ids.size < toRemoveCount && ids.size < newRabbits.length) {
@@ -621,6 +621,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   // Price helper with progression and bulk discounts
   const getPrice = (item: ShopItem, quantity: number = 1): number => {
     const qty = Math.max(1, Math.floor(quantity));
+
+    const dayMultiplier = 1.0 + Math.floor(gameState.day / 10) * 0.01;
+
     // Base bulk discount: x5: -5%, x10: -10%
     let bulkDiscount = 0;
     if (qty >= 10) bulkDiscount = 0.10;
@@ -640,9 +643,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       ? (1 - Math.min(0.8, bulkDiscount - dayAdditionOfPrice + houseDiscount + gameState.shopDiscountBonus))
       : 1;
 
-    // Broken upgrade repurchase costs 2x
+    // Broken upgrade repurchase costs 2x - 10x
     const brokenMultiplier = (item.type === 'upgrade' && gameState.brokenUpgrades?.includes(item.id)) ? Math.floor(Math.random()*(10-2+1)+2) : 1;
-    const total = item.cost * qty * discountFactor * brokenMultiplier;
+    const total = item.cost * qty * discountFactor * brokenMultiplier * dayMultiplier;
     return Math.ceil(total);
   };
 
@@ -651,14 +654,14 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     setGameState((prev) => {
       const day = prev.day;
       const alreadySoldToday = (prev.lastRabbitSaleDay ?? 0) === day;
-      const onSellWindow = day % 100 === 0;
+      const onSellWindow = day % 40 === 0;
       const rabbitCount = prev.rabbits.length;
       if (rabbitCount === 0) {
         toast.error('No rabbits to sell.');
         return prev;
       }
       if (!onSellWindow || alreadySoldToday) {
-        const nextWindow = onSellWindow ? day : day + (100 - (day % 100));
+        const nextWindow = onSellWindow ? day : day + (40 - (day % 40));
         toast.error(`You can sell rabbits on day multiples of 100. Next: Day ${nextWindow}.`);
         return prev;
       }
@@ -915,8 +918,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       };
       const history = [...(prev.runHistory || []), finished];
 
-      // Determine best by totalCoinsEarned
-      const best = history.reduce((a, b) => (b.totalCoinsEarned > a.totalCoinsEarned ? b : a), finished);
+      // Determine best by total rabbits (new ranking metric)
+      const best = history.reduce((a, b) => ((b.rabbits || 0) > (a.rabbits || 0) ? b : a), finished);
 
       // Sync the best run as the main leaderboard row
       try {
@@ -926,20 +929,32 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
           const { supabase } = await import('@/lib/supabase');
           const { getOrCreatePlayerId } = await import('@/utils/playerId');
           const player_id = getOrCreatePlayerId();
-          await supabase.from('player_progress').upsert({
-            player_id,
-            achievements_count: best.achievements.length,
-            achievements: best.achievements,
-            day: best.day,
-            house_capacity: best.houses * (4 + (prev.capacityBonusPerHouse || 0)),
-            rabbits_common: 0,
-            rabbits_rare: 0,
-            rabbits_legendary: 0,
-            current_coins: 0,
-            total_rabbits_born: prev.totalRabbitsBorn, // last run value
-            total_coins_earned: best.totalCoinsEarned,
-            last_updated: new Date().toISOString(),
-          }, { onConflict: 'player_id' });
+          // Compare with existing rabbits total and only upsert if improved
+          const { data: existing, error: fetchErr } = await supabase
+            .from('player_progress')
+            .select('rabbits_common, rabbits_rare, rabbits_legendary')
+            .eq('player_id', player_id)
+            .single();
+          const existingTotal = existing ? ((existing.rabbits_common || 0) + (existing.rabbits_rare || 0) + (existing.rabbits_legendary || 0)) : 0;
+          const bestRabbits = best.rabbits || 0;
+          if (!fetchErr || (fetchErr && fetchErr.code === 'PGRST116') ) {
+            if (bestRabbits > existingTotal) {
+              await supabase.from('player_progress').upsert({
+                player_id,
+                achievements_count: best.achievements.length,
+                achievements: best.achievements,
+                day: best.day,
+                house_capacity: best.houses * (4 + (prev.capacityBonusPerHouse || 0)),
+                rabbits_common: bestRabbits,
+                rabbits_rare: 0,
+                rabbits_legendary: 0,
+                current_coins: 0,
+                total_rabbits_born: prev.totalRabbitsBorn,
+                total_coins_earned: best.totalCoinsEarned,
+                last_updated: new Date().toISOString(),
+              }, { onConflict: 'player_id' });
+            }
+          }
 
           // Insert this finished run into player_runs history
           await supabase.from('player_runs').insert({

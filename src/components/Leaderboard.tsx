@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { ACHIEVEMENTS } from '@/data/achievements';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { getOrCreatePlayerId } from '@/utils/playerId';
 
 interface Row {
   player_id: string;
@@ -46,17 +45,45 @@ export const Leaderboard = () => {
   });
 
   const rows = useMemo(() => data ?? [], [data]);
-  const myId = useMemo(() => getOrCreatePlayerId(), []);
-  const myHistory = useMemo(() => {
-    try {
-      const raw = localStorage.getItem('rabbitTycoonSave');
-      if (!raw) return [] as Array<any>;
-      const parsed = JSON.parse(raw);
-      return (parsed?.runHistory || []) as Array<{ day: number; totalCoinsEarned: number; endAt: number; rabbits: number; houses: number; achievements: string[] }>;
-    } catch {
-      return [] as Array<any>;
-    }
-  }, []);
+  const sortedRows = useMemo(() => {
+    const list = [...rows];
+    list.sort((a, b) => {
+      const ar = (a.rabbits_common || 0) + (a.rabbits_rare || 0) + (a.rabbits_legendary || 0);
+      const br = (b.rabbits_common || 0) + (b.rabbits_rare || 0) + (b.rabbits_legendary || 0);
+      return br - ar;
+    });
+    return list;
+  }, [rows]);
+  const playerIds = useMemo(() => sortedRows.map(r => r.player_id), [sortedRows]);
+
+  const { data: runsData } = useQuery({
+    queryKey: ['leaderboard', 'runs', playerIds],
+    enabled: playerIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('player_runs')
+        .select('player_id, run_ended_at, day, total_coins_earned, rabbits, houses')
+        .in('player_id', playerIds)
+        .order('run_ended_at', { ascending: false });
+      if (error) throw error;
+      return data as Array<{ player_id: string; run_ended_at: string | null; day: number; total_coins_earned: number; rabbits: number; houses: number }>;
+    },
+    staleTime: 30_000,
+  });
+
+  const runsByPlayer = useMemo(() => {
+    const map: Record<string, Array<{ run_ended_at: string | null; day: number; total_coins_earned: number; rabbits: number; houses: number }>> = {};
+    (runsData || []).forEach(r => {
+      (map[r.player_id] ||= []).push({
+        run_ended_at: r.run_ended_at,
+        day: r.day,
+        total_coins_earned: r.total_coins_earned,
+        rabbits: r.rabbits,
+        houses: r.houses,
+      });
+    });
+    return map;
+  }, [runsData]);
 
   return (
     <div className="space-y-4">
@@ -87,12 +114,12 @@ export const Leaderboard = () => {
                 <tr>
                   <td className="px-4 py-6 text-center text-muted-foreground" colSpan={10}>Loading…</td>
                 </tr>
-              ) : rows.length === 0 ? (
+              ) : sortedRows.length === 0 ? (
                 <tr>
                   <td className="px-4 py-6 text-center text-muted-foreground" colSpan={10}>No ranks yet. Start playing to appear here!</td>
                 </tr>
               ) : (
-                rows.map((r, idx) => {
+                sortedRows.map((r, idx) => {
                   const totalRabbits = (r.rabbits_common || 0) + (r.rabbits_rare || 0) + (r.rabbits_legendary || 0);
                   const isOpen = !!expanded[r.player_id];
                   return (
@@ -135,30 +162,30 @@ export const Leaderboard = () => {
                               </div>
                             </div>
 
-                            {r.player_id === myId && myHistory.length > 0 && (
+                            {!!runsByPlayer[r.player_id]?.length && (
                               <div>
-                                <div className="font-semibold mb-2">Your Previous Runs</div>
+                                <div className="font-semibold mb-2">Previous Runs</div>
                                 <div className="overflow-x-auto">
                                   <table className="min-w-full text-xs">
                                     <thead className="bg-muted/40">
                                       <tr>
                                         <th className="text-left px-2 py-1">Ended</th>
                                         <th className="text-right px-2 py-1">Day</th>
-                                        <th className="text-right px-2 py-1">Total Coins</th>
                                         <th className="text-right px-2 py-1">Rabbits</th>
                                         <th className="text-right px-2 py-1">Houses</th>
+                                        <th className="text-right px-2 py-1">Total Coins</th>
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {[...myHistory]
-                                        .sort((a, b) => (b.endAt || 0) - (a.endAt || 0))
+                                      {runsByPlayer[r.player_id]
+                                        .slice(0, 20)
                                         .map((run, i) => (
-                                          <tr key={(run.endAt || 0) + '-' + i} className={i % 2 === 0 ? 'bg-background' : ''}>
-                                            <td className="px-2 py-1">{run.endAt ? new Date(run.endAt).toLocaleString() : '-'}</td>
+                                          <tr key={(run.run_ended_at || '') + '-' + i} className={i % 2 === 0 ? 'bg-background' : ''}>
+                                            <td className="px-2 py-1">{run.run_ended_at ? new Date(run.run_ended_at).toLocaleString() : '-'}</td>
                                             <td className="px-2 py-1 text-right">{run.day ?? '-'}</td>
-                                            <td className="px-2 py-1 text-right font-medium">{(run.totalCoinsEarned || 0).toLocaleString()}</td>
                                             <td className="px-2 py-1 text-right">{run.rabbits ?? '-'}</td>
                                             <td className="px-2 py-1 text-right">{run.houses ?? '-'}</td>
+                                            <td className="px-2 py-1 text-right">{(run.total_coins_earned || 0).toLocaleString()}</td>
                                           </tr>
                                         ))}
                                     </tbody>

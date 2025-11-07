@@ -66,24 +66,40 @@ export async function syncPlayerProgress(gameState: GameState): Promise<void> {
     const playerId = getOrCreatePlayerId();
     const progressData = gameStateToPlayerProgress(gameState);
     const player_name = localStorage.getItem('rabbitTycoon_playerName') || undefined;
-    
-    const { error } = await supabase
+    // Compute current total rabbits
+    const currentTotalRabbits = (progressData.rabbits_common || 0) + (progressData.rabbits_rare || 0) + (progressData.rabbits_legendary || 0);
+
+    // Fetch existing to compare best rabbits
+    const { data: existingRow, error: fetchErr } = await supabase
       .from('player_progress')
-      .upsert(
-        {
-          player_id: playerId,
-          ...progressData,
-          ...(player_name ? { player_name } : {}),
-          last_updated: new Date().toISOString(),
-        },
-        {
-          onConflict: 'player_id',
-        }
-      );
-    
-    if (error) {
-      console.error('Error syncing player progress:', error);
-      throw error;
+      .select('rabbits_common, rabbits_rare, rabbits_legendary')
+      .eq('player_id', playerId)
+      .single();
+    if (fetchErr && fetchErr.code !== 'PGRST116') {
+      console.warn('Non-fatal: failed to read existing progress before sync', fetchErr);
+    }
+    const existingTotalRabbits = existingRow ? ((existingRow.rabbits_common || 0) + (existingRow.rabbits_rare || 0) + (existingRow.rabbits_legendary || 0)) : 0;
+
+    // Only update if we improved total rabbits
+    if (currentTotalRabbits > existingTotalRabbits) {
+      const { error } = await supabase
+        .from('player_progress')
+        .upsert(
+          {
+            player_id: playerId,
+            ...progressData,
+            ...(player_name ? { player_name } : {}),
+            last_updated: new Date().toISOString(),
+          },
+          { onConflict: 'player_id' }
+        );
+      if (error) {
+        console.error('Error syncing player progress:', error);
+        throw error;
+      }
+      console.log('Player progress synced (improved rabbits).');
+    } else {
+      console.log('Skipped sync: rabbits not improved (keeping best on leaderboard).');
     }
     
     console.log('Player progress synced successfully');

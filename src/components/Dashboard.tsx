@@ -40,7 +40,7 @@ export const Dashboard = () => {
   const cannotAffordBothMin = gameState.coins < (minFoodPrice + minWaterPrice);
 
   // Sell availability: only on day multiples of 100 and not sold already that day
-  const isSellDay = gameState.day % 50 === 0;
+  const isSellDay = gameState.day % 40 === 0;
   const alreadySoldToday = (gameState as any).lastRabbitSaleDay === gameState.day;
   const canSell = isSellDay && !alreadySoldToday && rabbitCount > 1;
   const nextSellDay = isSellDay ? gameState.day : gameState.day + (40 - (gameState.day % 40));
