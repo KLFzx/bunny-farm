@@ -19,7 +19,7 @@ export const SHOP_ITEMS: ShopItem[] = [
     cost: 45,
     type: 'rabbit',
     effect: { rabbits: 2 },
-    icon: '👨‍👩‍👧',
+    icon: '🐰🐰',
     breed: 'common',
   },
   
@@ -43,7 +43,7 @@ export const SHOP_ITEMS: ShopItem[] = [
     cost: 500,
     type: 'rabbit',
     effect: { rabbits: 1 },
-    icon: '✨',
+    icon: '🐇✨',
     breed: 'legendary',
   },
   

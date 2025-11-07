@@ -364,8 +364,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
           breedingMultiplier *= 0.25;
         }
         
-        const rabbitsToAdd = Math.floor(breedingMultiplier);
-        const actualNewRabbits = Math.min(rabbitsToAdd, maxCapacity - rabbitCount);
+        const rabbitsToAdd = Math.max(1, breedingMultiplier * prev.rabbits.length * Math.random() * 0.2);
+        const actualNewRabbits = rabbitsToAdd;
         
         if (actualNewRabbits > 0) {
           // New rabbits inherit breed from random parent
@@ -631,7 +631,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
     // Progression increase: every 10 days -> +5%, capped at 200%
     const dayAdditionOfPriceSteps = Math.floor(gameState.day / 20);
-    const dayAdditionOfPrice = Math.min(2.00, dayAdditionOfPriceSteps * 0.05);
+    const dayAdditionOfPrice = Math.min(3.00, dayAdditionOfPriceSteps * 0.05);
 
     // Additional small discount per 5 houses -> -2%, capped total 20%
     const houseDiscountSteps = Math.floor(gameState.houses / 5);
@@ -643,9 +643,19 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       ? (1 - Math.min(0.8, bulkDiscount - dayAdditionOfPrice + houseDiscount + gameState.shopDiscountBonus))
       : 1;
 
+    let bunnyMultiplierPrice = 1;
+    if (item.type === 'rabbit') {
+      bunnyMultiplierPrice =  Math.min(10.00, gameState.day / 60 * 0.08);
+    }
+
+    let houseMultiplayer = 1;
+    if (item.type === 'house') {
+      houseMultiplayer = Math.min(10.00, gameState.day / 50 * 0.1);
+    }
+
     // Broken upgrade repurchase costs 2x - 10x
     const brokenMultiplier = (item.type === 'upgrade' && gameState.brokenUpgrades?.includes(item.id)) ? Math.floor(Math.random()*(10-2+1)+2) : 1;
-    const total = item.cost * qty * discountFactor * brokenMultiplier * dayMultiplier;
+    const total = item.cost * qty * discountFactor * brokenMultiplier * dayMultiplier * bunnyMultiplierPrice * houseMultiplayer;
     return Math.ceil(total);
   };
 
@@ -662,7 +672,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       }
       if (!onSellWindow || alreadySoldToday) {
         const nextWindow = onSellWindow ? day : day + (40 - (day % 40));
-        toast.error(`You can sell rabbits on day multiples of 100. Next: Day ${nextWindow}.`);
+        toast.error(`You can sell rabbits on day multiples of 40. Next: Day ${nextWindow}.`);
         return prev;
       }
 
