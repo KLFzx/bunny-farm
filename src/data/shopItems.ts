@@ -84,6 +84,15 @@ export const SHOP_ITEMS: ShopItem[] = [
     effect: { food: 1100 },
     icon: '✈️',
   },
+    {
+    id: 'carrots-ship',
+    name: 'Carrot Cargo Ship',
+    description: 'A full cargo ship filled with extra supreme carrots',
+    cost: 13000,
+    type: 'food',
+    effect: { food: 11000 },
+    icon: '🛳',
+  },
   {
     id: 'lettuce-upgrade',
     name: 'Lettuce Garden',
@@ -138,6 +147,15 @@ export const SHOP_ITEMS: ShopItem[] = [
     cost: 800,
     type: 'water',
     effect: { water: 1100 },
+    icon: '🚰',
+  },
+   {
+    id: 'water-tsunami',
+    name: 'Water Tsunami',
+    description: 'A huge tsunami to fill the barrels',
+    cost: 9900,
+    type: 'water',
+    effect: { water: 9100 },
     icon: '🌊',
   },
   {
