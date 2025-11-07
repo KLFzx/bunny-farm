@@ -100,12 +100,12 @@ export const Leaderboard = () => {
                 <th className="text-left px-4 py-3 w-10" />
                 <th className="text-left px-4 py-3">#</th>
                 <th className="text-left px-4 py-3">Player</th>
+                <th className="text-right px-4 py-3">Rabbits</th>
                 <th className="text-right px-4 py-3">Total Coins</th>
                 <th className="text-right px-4 py-3">Current Coins</th>
                 <th className="text-right px-4 py-3">Day</th>
                 <th className="text-right px-4 py-3">Capacity</th>
                 <th className="text-right px-4 py-3">Achievements</th>
-                <th className="text-right px-4 py-3">Rabbits</th>
                 <th className="text-right px-4 py-3">Born</th>
               </tr>
             </thead>
@@ -132,12 +132,12 @@ export const Leaderboard = () => {
                         </td>
                         <td className="px-4 py-3 font-medium">{idx + 1}</td>
                         <td className="px-4 py-3 font-mono">{(r.player_name && r.player_name.trim().length > 0) ? r.player_name : maskId(r.player_id)}</td>
+                        <td className="px-4 py-3 text-right">{totalRabbits.toLocaleString()}</td>
                         <td className="px-4 py-3 text-right font-semibold">{(r.total_coins_earned || 0).toLocaleString()}</td>
                         <td className="px-4 py-3 text-right">{(r.current_coins || 0).toLocaleString()}</td>
                         <td className="px-4 py-3 text-right">{r.day ?? '-'}</td>
                         <td className="px-4 py-3 text-right">{(r.house_capacity ?? 0).toLocaleString()}</td>
                         <td className="px-4 py-3 text-right">{r.achievements_count || 0}</td>
-                        <td className="px-4 py-3 text-right">{totalRabbits.toLocaleString()}</td>
                         <td className="px-4 py-3 text-right">{(r.total_rabbits_born || 0).toLocaleString()}</td>
                       </tr>
                       {isOpen && (
