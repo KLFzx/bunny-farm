@@ -364,7 +364,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
           breedingMultiplier *= 0.25;
         }
         
-        const rabbitsToAdd = Math.max(1, breedingMultiplier * prev.rabbits.length * (Math.random() * 0.042 + 0.01));
+        const rabbitsToAdd = Math.max(1, breedingMultiplier * prev.rabbits.length / 3.2 * (Math.random() * 0.042 + 0.01));
         const actualNewRabbits = rabbitsToAdd;
         
         if (actualNewRabbits > 0) {
