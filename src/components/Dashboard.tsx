@@ -7,9 +7,11 @@ import { RABBIT_BREEDS } from '@/data/rabbitBreeds';
 import { Badge } from './ui/badge';
 import { useState } from 'react';
 import { AchievementsModal } from './AchievementsModal';
+import { GameOverModal } from './GameOverModal';
+import { SHOP_ITEMS } from '@/data/shopItems';
 
 export const Dashboard = () => {
-  const { gameState, nextDay, sellRabbits } = useGame();
+  const { gameState, nextDay, sellRabbits, getPrice } = useGame();
   const [showAchievements, setShowAchievements] = useState(false);
   
   const rabbitCount = gameState.rabbits.length;
@@ -21,11 +23,18 @@ export const Dashboard = () => {
     gameState.food >= foodNeededPerDay && 
     gameState.water >= waterNeededPerDay;
 
+  const foodItem = SHOP_ITEMS.find(i => i.id === 'carrots-small')!;
+  const waterItem = SHOP_ITEMS.find(i => i.id === 'water-small')!;
+  const minFoodPrice = getPrice(foodItem, 1);
+  const minWaterPrice = getPrice(waterItem, 1);
+  const notEnoughSupplies = gameState.food < foodNeededPerDay || gameState.water < waterNeededPerDay;
+  const cannotAffordBothMin = gameState.coins < (minFoodPrice + minWaterPrice);
+
   // Sell availability: only on day multiples of 100 and not sold already that day
-  const isSellDay = gameState.day % 100 === 0;
+  const isSellDay = gameState.day % 50 === 0;
   const alreadySoldToday = (gameState as any).lastRabbitSaleDay === gameState.day;
-  const canSell = isSellDay && !alreadySoldToday && rabbitCount > 0;
-  const nextSellDay = isSellDay ? gameState.day : gameState.day + (100 - (gameState.day % 100));
+  const canSell = isSellDay && !alreadySoldToday && rabbitCount > 1;
+  const nextSellDay = isSellDay ? gameState.day : gameState.day + (40 - (gameState.day % 40));
 
   // Calculate breed distribution
   const breedCounts = gameState.rabbits.reduce((acc, rabbit) => {
@@ -35,6 +44,7 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {notEnoughSupplies && cannotAffordBothMin && <GameOverModal />}
       {/* Rabbit Population */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-farm p-4 md:p-8 shadow-soft">
         <div className="relative z-10">

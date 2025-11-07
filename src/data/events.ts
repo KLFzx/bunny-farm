@@ -8,6 +8,7 @@ export interface GameEvent {
     food?: number;
     water?: number;
     rabbits?: number;
+    houses?: number;
     breedingBonus?: number; // Temporary breeding multiplier
   };
   type: 'positive' | 'negative' | 'neutral';
@@ -85,6 +86,15 @@ export const RANDOM_EVENTS: GameEvent[] = [
     description: 'Everything seems to be going your way! Bonus coins!',
     icon: '🍀',
     effect: { coins: 75 },
+    type: 'positive',
+    rarity: 'rare',
+  },
+  {
+    id: 'free-house',
+    name: 'Gifted Hutch',
+    description: 'A benefactor donates a sturdy new house! Capacity +4.',
+    icon: '🏠',
+    effect: { houses: 1 },
     type: 'positive',
     rarity: 'rare',
   },

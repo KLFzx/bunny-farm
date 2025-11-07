@@ -51,6 +51,15 @@ export interface GameState {
   feverSurvivals?: number; // number of times player survived (ended) fever
   // Meta
   lastRabbitSaleDay: number;
+  // Runs history (local-only)
+  runHistory?: Array<{
+    day: number;
+    totalCoinsEarned: number;
+    endAt: number;
+    rabbits: number;
+    houses: number;
+    achievements: string[];
+  }>;
 }
 
 interface GameContextType {
@@ -145,6 +154,7 @@ const INITIAL_STATE: GameState = {
   feverSurvivals: 0,
   // Meta
   lastRabbitSaleDay: 0,
+  runHistory: [],
 };
 
 const FOOD_CONSUMPTION_PER_RABBIT = 1;
@@ -196,6 +206,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
           feverIsolated: parsed.feverIsolated ?? false,
           feverSurvivals: parsed.feverSurvivals ?? 0,
           lastRabbitSaleDay: parsed.lastRabbitSaleDay ?? 0,
+          runHistory: parsed.runHistory || [],
         } as GameState;
       } catch {
         return INITIAL_STATE;
@@ -337,7 +348,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       // Apply food efficiency and global coin multiplier
       const foodEfficiency = prev.foodType === 'pellets' ? 1.5 : prev.foodType === 'lettuce' ? 1.2 : 1;
       const nextDayNumber = prev.day + 1;
-      const timeBonus = Math.min(0.25, Math.floor(nextDayNumber / 100) * 0.05);
+      const timeBonus = Math.min(0.35, Math.floor(nextDayNumber / 130) * 0.1);
       coinsEarned = Math.floor(coinsEarned * foodEfficiency * prev.coinMultiplier * (1 + timeBonus));
 
       // Breeding logic
@@ -375,12 +386,14 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       let eventFood = 0;
       let eventWater = 0;
       let eventRabbits = 0;
+      let eventHouses = 0;
 
       if (event) {
         eventCoins = event.effect.coins || 0;
         eventFood = event.effect.food || 0;
         eventWater = event.effect.water || 0;
         eventRabbits = event.effect.rabbits || 0;
+        eventHouses = event.effect.houses || 0;
         
         // Start fever if rabbit-fever occurs
         if (event.id === 'rabbit-fever' && !prev.feverActive) {
@@ -444,7 +457,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       let brokenUpgrades = [...prev.brokenUpgrades];
       let brokeThisDay = false;
       let adjustedState = { ...prev } as GameState;
-      if (candidates.length > 0 && Math.random() < 0.025) {
+      if (candidates.length > 2 && Math.random() < 0.01) {
         const idx = Math.floor(Math.random() * candidates.length);
         const brokenId = candidates[idx];
         if (!brokenUpgrades.includes(brokenId)) brokenUpgrades.push(brokenId);
@@ -567,6 +580,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         coins: Math.max(0, prev.coins + coinsEarned + eventCoins + prev.passiveCoinsPerDay),
         food: Math.max(0, prev.food - foodNeeded + eventFood + prev.passiveFoodPerDay),
         water: Math.max(0, prev.water - waterNeeded + eventWater + prev.passiveWaterPerDay),
+        houses: prev.houses + eventHouses,
         day: prev.day + 1,
         totalRabbitsBorn: prev.totalRabbitsBorn + newBirths + eventRabbits,
         totalCoinsEarned: prev.totalCoinsEarned + coinsEarned,
@@ -890,14 +904,62 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const resetGame = () => {
-    setGameState(INITIAL_STATE);
-    setNewAchievement(null);
-    localStorage.removeItem('rabbitTycoonSave');
-    
-    // Sync reset state to Supabase (player ID persists)
-    syncPlayerProgress(INITIAL_STATE);
-    
-    toast.success('Game reset!');
+    setGameState((prev) => {
+      const finished = {
+        day: prev.day,
+        totalCoinsEarned: prev.totalCoinsEarned,
+        endAt: Date.now(),
+        rabbits: prev.rabbits.length,
+        houses: prev.houses,
+        achievements: [...(prev.unlockedAchievements || [])],
+      };
+      const history = [...(prev.runHistory || []), finished];
+
+      // Determine best by totalCoinsEarned
+      const best = history.reduce((a, b) => (b.totalCoinsEarned > a.totalCoinsEarned ? b : a), finished);
+
+      // Sync the best run as the main leaderboard row
+      try {
+        // lightweight inline upsert without altering current state stats
+        // defer import to avoid cycle costs
+        import('@/services/playerDataSync').then(async (mod) => {
+          const { supabase } = await import('@/lib/supabase');
+          const { getOrCreatePlayerId } = await import('@/utils/playerId');
+          const player_id = getOrCreatePlayerId();
+          await supabase.from('player_progress').upsert({
+            player_id,
+            achievements_count: best.achievements.length,
+            achievements: best.achievements,
+            day: best.day,
+            house_capacity: best.houses * (4 + (prev.capacityBonusPerHouse || 0)),
+            rabbits_common: 0,
+            rabbits_rare: 0,
+            rabbits_legendary: 0,
+            current_coins: 0,
+            total_rabbits_born: prev.totalRabbitsBorn, // last run value
+            total_coins_earned: best.totalCoinsEarned,
+            last_updated: new Date().toISOString(),
+          }, { onConflict: 'player_id' });
+
+          // Insert this finished run into player_runs history
+          await supabase.from('player_runs').insert({
+            player_id,
+            run_ended_at: new Date(finished.endAt).toISOString(),
+            day: finished.day,
+            total_coins_earned: finished.totalCoinsEarned,
+            rabbits: finished.rabbits,
+            houses: finished.houses,
+            achievements: finished.achievements,
+          });
+        });
+      } catch {}
+
+      const next: GameState = { ...INITIAL_STATE, runHistory: history } as GameState;
+      setNewAchievement(null);
+      localStorage.setItem('rabbitTycoonSave', JSON.stringify(next));
+      toast.success('Game reset!');
+      return next;
+    });
   };
 
   const clearAchievementNotification = () => {

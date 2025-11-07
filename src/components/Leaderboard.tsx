@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { ACHIEVEMENTS } from '@/data/achievements';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { getOrCreatePlayerId } from '@/utils/playerId';
 
 interface Row {
   player_id: string;
@@ -45,6 +46,17 @@ export const Leaderboard = () => {
   });
 
   const rows = useMemo(() => data ?? [], [data]);
+  const myId = useMemo(() => getOrCreatePlayerId(), []);
+  const myHistory = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('rabbitTycoonSave');
+      if (!raw) return [] as Array<any>;
+      const parsed = JSON.parse(raw);
+      return (parsed?.runHistory || []) as Array<{ day: number; totalCoinsEarned: number; endAt: number; rabbits: number; houses: number; achievements: string[] }>;
+    } catch {
+      return [] as Array<any>;
+    }
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -104,21 +116,56 @@ export const Leaderboard = () => {
                       {isOpen && (
                         <tr className={idx % 2 === 0 ? 'bg-muted/20' : 'bg-muted/10'}>
                           <td />
-                          <td colSpan={9} className="px-6 py-4">
-                            <div className="flex flex-wrap gap-2">
-                              {(r.achievements || []).length === 0 ? (
-                                <span className="text-muted-foreground text-sm">No achievements yet.</span>
-                              ) : (
-                                (r.achievements || []).map((id) => {
-                                  const a = ACHIEVEMENTS.find(x => x.id === id);
-                                  return (
-                                    <span key={id} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-                                      {a ? `${a.icon} ${a.name}` : id}
-                                    </span>
-                                  );
-                                })
-                              )}
+                          <td colSpan={9} className="px-6 py-4 space-y-4">
+                            <div>
+                              <div className="font-semibold mb-2">Achievements</div>
+                              <div className="flex flex-wrap gap-2">
+                                {(r.achievements || []).length === 0 ? (
+                                  <span className="text-muted-foreground text-sm">No achievements yet.</span>
+                                ) : (
+                                  (r.achievements || []).map((id) => {
+                                    const a = ACHIEVEMENTS.find(x => x.id === id);
+                                    return (
+                                      <span key={id} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                                        {a ? `${a.icon} ${a.name}` : id}
+                                      </span>
+                                    );
+                                  })
+                                )}
+                              </div>
                             </div>
+
+                            {r.player_id === myId && myHistory.length > 0 && (
+                              <div>
+                                <div className="font-semibold mb-2">Your Previous Runs</div>
+                                <div className="overflow-x-auto">
+                                  <table className="min-w-full text-xs">
+                                    <thead className="bg-muted/40">
+                                      <tr>
+                                        <th className="text-left px-2 py-1">Ended</th>
+                                        <th className="text-right px-2 py-1">Day</th>
+                                        <th className="text-right px-2 py-1">Total Coins</th>
+                                        <th className="text-right px-2 py-1">Rabbits</th>
+                                        <th className="text-right px-2 py-1">Houses</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {[...myHistory]
+                                        .sort((a, b) => (b.endAt || 0) - (a.endAt || 0))
+                                        .map((run, i) => (
+                                          <tr key={(run.endAt || 0) + '-' + i} className={i % 2 === 0 ? 'bg-background' : ''}>
+                                            <td className="px-2 py-1">{run.endAt ? new Date(run.endAt).toLocaleString() : '-'}</td>
+                                            <td className="px-2 py-1 text-right">{run.day ?? '-'}</td>
+                                            <td className="px-2 py-1 text-right font-medium">{(run.totalCoinsEarned || 0).toLocaleString()}</td>
+                                            <td className="px-2 py-1 text-right">{run.rabbits ?? '-'}</td>
+                                            <td className="px-2 py-1 text-right">{run.houses ?? '-'}</td>
+                                          </tr>
+                                        ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       )}

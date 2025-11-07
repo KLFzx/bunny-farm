@@ -13,7 +13,7 @@ export const GameOverModal = () => {
         </div>
         <h2 className="text-2xl font-extrabold text-red-700">Game Over</h2>
         <p className="text-sm text-muted-foreground mt-2">
-          Your rabbit colony has perished. Try a new strategy and build it back stronger!
+          Your rabbit colony has perished. You don't have enough resources to keep it alive. Try a new strategy and build it back stronger!
         </p>
         <button
           className="mt-5 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 bg-primary text-primary-foreground hover:opacity-90"
