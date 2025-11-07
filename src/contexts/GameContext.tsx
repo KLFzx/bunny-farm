@@ -622,7 +622,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const getPrice = (item: ShopItem, quantity: number = 1): number => {
     const qty = Math.max(1, Math.floor(quantity));
 
-    const dayMultiplier = 1.0 + Math.floor(gameState.day / 10) * 0.01;
+    const dayMultiplier = 1.0 + Math.floor(gameState.day / 10) * 0.012;
 
     // Base bulk discount: x5: -5%, x10: -10%
     let bulkDiscount = 0;
@@ -631,7 +631,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
     // Progression increase: every 10 days -> +5%, capped at 200%
     const dayAdditionOfPriceSteps = Math.floor(gameState.day / 20);
-    const dayAdditionOfPrice = Math.min(3.00, dayAdditionOfPriceSteps * 0.05);
+    const dayAdditionOfPrice = Math.min(10.00, dayAdditionOfPriceSteps * 0.052);
 
     // Additional small discount per 5 houses -> -2%, capped total 20%
     const houseDiscountSteps = Math.floor(gameState.houses / 5);
