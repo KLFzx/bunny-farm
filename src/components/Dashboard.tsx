@@ -5,14 +5,23 @@ import { Calendar, Home, Droplets, Carrot, Trophy } from 'lucide-react';
 import rabbitIcon from '@/assets/rabbit-icon.png';
 import { RABBIT_BREEDS } from '@/data/rabbitBreeds';
 import { Badge } from './ui/badge';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AchievementsModal } from './AchievementsModal';
 import { GameOverModal } from './GameOverModal';
 import { SHOP_ITEMS } from '@/data/shopItems';
+import { TutorialModal } from './TutorialModal';
 
 export const Dashboard = () => {
   const { gameState, nextDay, sellRabbits, getPrice } = useGame();
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem('rabbitTycoon_tutorialSeen');
+      if (!seen) setShowTutorial(true);
+    } catch {}
+  }, []);
   
   const rabbitCount = gameState.rabbits.length;
   const maxCapacity = gameState.houses * 4;
@@ -44,6 +53,14 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {showTutorial && (
+        <TutorialModal
+          onClose={() => {
+            try { localStorage.setItem('rabbitTycoon_tutorialSeen', '1'); } catch {}
+            setShowTutorial(false);
+          }}
+        />
+      )}
       {notEnoughSupplies && cannotAffordBothMin && <GameOverModal />}
       {/* Rabbit Population */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-farm p-4 md:p-8 shadow-soft">
