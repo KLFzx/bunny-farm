@@ -645,12 +645,12 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
     let bunnyMultiplierPrice = 1;
     if (item.type === 'rabbit') {
-      bunnyMultiplierPrice =  Math.min(10.00, gameState.day / 60 * 0.08);
+      bunnyMultiplierPrice += Math.min(10.00, gameState.day / 60 * 0.08);
     }
 
     let houseMultiplayer = 1;
     if (item.type === 'house') {
-      houseMultiplayer = Math.min(10.00, gameState.day / 50 * 0.1);
+      houseMultiplayer += Math.min(10.00, gameState.day / 50 * 0.1);
     }
 
     // Broken upgrade repurchase costs 2x - 10x
