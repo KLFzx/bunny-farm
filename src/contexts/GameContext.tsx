@@ -654,7 +654,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Broken upgrade repurchase costs 2x - 10x
-    const brokenMultiplier = (item.type === 'upgrade' && gameState.brokenUpgrades?.includes(item.id)) ? Math.floor(Math.random()*(10-2+1)+2) : 1;
+    const brokenMultiplier = (item.type === 'upgrade' && gameState.brokenUpgrades?.includes(item.id)) ? Math.floor(Math.random()*(10-2+1)+2) * gameState.day / 50 * 0.05 : 1;
     const total = item.cost * qty * discountFactor * brokenMultiplier * dayMultiplier * bunnyMultiplierPrice * houseMultiplayer;
     return Math.ceil(total);
   };
