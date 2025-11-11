@@ -85,7 +85,7 @@ const GameContent = () => {
         </main>
         
         <footer className={`text-center py-4 md:py-6 text-xs md:text-sm ${gameState.feverActive ? 'text-red-200/80' : 'text-muted-foreground'}`}>
-          <p>🐰 Rabbit Tycoon • Build your rabbit empire!</p>
+          <p>🐰 Rabbit Tycoon • Build your rabbit empire! • Approved & designed by Albert</p>
         </footer>
       </div>
       
